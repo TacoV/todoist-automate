@@ -1,19 +1,20 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * import {onCall} from "firebase-functions/v2/https";
- * import {onDocumentWritten} from "firebase-functions/v2/firestore";
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
+import { onRequest } from 'firebase-functions/v2/https'
+import * as logger from 'firebase-functions/logger'
+import { TodoistApi } from '@doist/todoist-api-typescript'
 
-import {onRequest} from "firebase-functions/v2/https";
-import * as logger from "firebase-functions/logger";
+import { defineString } from 'firebase-functions/params'
+import { TodoistWebhookRequest } from './types/todoist'
+const TODOIST_API_KEY = defineString('TODOIST_API_KEY')
+const api = new TodoistApi(TODOIST_API_KEY.value())
 
-// Start writing functions
-// https://firebase.google.com/docs/functions/typescript
-
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+export const helloWorld = onRequest({
+  region: 'europe-west3',
+},
+async (request, response) => {
+  const body = request.body as TodoistWebhookRequest
+  logger.info('Hello logs!', body)
+  if (body.event_data.content.startsWith('Hello')) {
+    await api.quickAddTask({ text: 'Hello from Firebase!' })
+  }
+  response.send('Hello to the browser!')
+})
